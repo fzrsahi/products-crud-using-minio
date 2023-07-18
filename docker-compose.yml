@@ -1,0 +1,11 @@
+version: '3.7'
+services:
+  mongo:
+    container_name: task-one-intern-thinkspedia
+    image: mongo:4
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: task-one-intern
