@@ -6,7 +6,7 @@ import {
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
-import { Auth } from './schemas/auth.schema';
+import { User } from './schemas/auth.schema';
 import * as bcrypt from 'bcrypt';
 import { Response, ResponseWithToken } from '../types';
 import { JwtService } from '@nestjs/jwt';
@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(Auth.name) private readonly authModel: mongoose.Model<Auth>,
+    @InjectModel(User.name) private readonly userModel: mongoose.Model<User>,
     private JwtService: JwtService,
   ) {}
 
@@ -23,7 +23,7 @@ export class AuthService {
     dto.password = hash;
 
     try {
-      const createUser = await this.authModel.create(dto);
+      const createUser = await this.userModel.create(dto);
       createUser.password = null;
       return {
         statusCode: 201,
@@ -42,7 +42,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<ResponseWithToken> {
-    const user = await this.authModel.findOne({
+    const user = await this.userModel.findOne({
       username: dto.username,
     });
 
@@ -81,7 +81,7 @@ export class AuthService {
         username,
       },
       {
-        expiresIn: '20s',
+        expiresIn: '1d',
         secret: process.env.SECRET_KEY,
       },
     );

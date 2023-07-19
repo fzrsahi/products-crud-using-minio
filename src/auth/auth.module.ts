@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthSchema } from './schemas/auth.schema';
+import { UserSchema } from './schemas/auth.schema';
 import { JwtStrategy } from './strategy';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -12,8 +12,8 @@ import { JwtModule } from '@nestjs/jwt';
   imports: [
     MongooseModule.forFeature([
       {
-        name: 'Auth',
-        schema: AuthSchema,
+        name: 'User',
+        schema: UserSchema,
       },
     ]),
     JwtModule.register({}),
