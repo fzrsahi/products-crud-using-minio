@@ -8,12 +8,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Auth } from './schemas/auth.schema';
 import * as bcrypt from 'bcrypt';
-import { Response } from './../response';
+import { Response, ResponseWithToken } from '../types';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(Auth.name) private readonly authModel: mongoose.Model<Auth>,
+    private JwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto): Promise<Response> {
@@ -24,7 +26,6 @@ export class AuthService {
       const createUser = await this.authModel.create(dto);
       createUser.password = null;
       return {
-        success: true,
         statusCode: 201,
         message: 'Success Create Account',
         data: createUser,
@@ -32,7 +33,6 @@ export class AuthService {
     } catch (error) {
       if (error.code === 11000) {
         throw new BadRequestException({
-          success: false,
           statusCode: 400,
           message: 'Username or Email Already Exist!',
         } as Response);
@@ -41,35 +41,50 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginDto): Promise<Response> {
-    const findUser = await this.authModel.findOne({
+  async login(dto: LoginDto): Promise<ResponseWithToken> {
+    const user = await this.authModel.findOne({
       username: dto.username,
     });
 
     try {
-      if (!findUser) {
+      if (!user) {
         throw new NotFoundException({
-          success: false,
-          statusCode: 404,
-          message: 'Account Not Found!',
-        } as Response);
-      }
-      const pwMatches = await bcrypt.compare(dto.password, findUser.password);
-      if (!pwMatches) {
-        throw new NotFoundException({
-          success: false,
           statusCode: 404,
           message: 'Account Not Found!',
         } as Response);
       }
 
+      const pwMatches = await bcrypt.compare(dto.password, user.password);
+      if (!pwMatches) {
+        throw new NotFoundException({
+          statusCode: 404,
+          message: 'Account Not Found!',
+        } as Response);
+      }
+
+      const token = await this.getToken(user.id, user.username);
+
       return {
-        success: true,
         statusCode: 200,
         message: 'Success Login',
+        token,
       };
     } catch (error) {
       throw error;
     }
+  }
+
+  async getToken(userId: string, username: string): Promise<string> {
+    const accessToken = this.JwtService.signAsync(
+      {
+        sub: userId,
+        username,
+      },
+      {
+        expiresIn: '20s',
+        secret: process.env.SECRET_KEY,
+      },
+    );
+    return accessToken;
   }
 }
