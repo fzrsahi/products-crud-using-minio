@@ -1,0 +1,23 @@
+version: '3.7'
+services:
+  mongo:
+    container_name: task-one-intern-thinkspedia
+    image: mongo:4
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: task-one-intern
+  minio:
+    image: quay.io/minio/minio
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=monster88
+    volumes:
+      - ${HOME}/minio/data:/data
+    command: server /data --console-address ":9090"
+    user: "${UID}:${GID}"
