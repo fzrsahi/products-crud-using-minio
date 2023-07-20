@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProductDto } from './dto/product.dto';
 import { UpdateProductDto } from './dto';
 import { MinioClientService } from 'src/minio-client/minio-client.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './schema/product.schema';
-import mongoose from 'mongoose';
+import mongoose, { isValidObjectId } from 'mongoose';
 import { Response } from './../types';
 import path from 'path';
 
@@ -57,6 +61,12 @@ export class ProductService {
 
   async findOne(id: string): Promise<Response> {
     try {
+      if (!isValidObjectId(id)) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message: 'Id is not valid',
+        } as Response);
+      }
       const product = await this.productModel
         .find({
           _id: id,
@@ -89,19 +99,25 @@ export class ProductService {
     dto: UpdateProductDto,
     image: Express.Multer.File,
   ): Promise<Response> {
-    const product = await this.productModel.findOne({
-      _id: productId,
-      user: userId,
-    });
-
-    const handledImageUrl = await this.handleProductImage(
-      image,
-      product,
-      this.minioClientService,
-    );
-    const handleProduct = this.handleProductDTO(dto, product);
-
     try {
+      if (!isValidObjectId(productId)) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message: 'Id is not valid',
+        } as Response);
+      }
+      const product = await this.productModel.findOne({
+        _id: productId,
+        user: userId,
+      });
+
+      const handledImageUrl = await this.handleProductImage(
+        image,
+        product,
+        this.minioClientService,
+      );
+      const handleProduct = this.handleProductDTO(dto, product);
+
       const updateProduct = await this.productModel.updateOne(
         {
           _id: productId,
@@ -131,6 +147,12 @@ export class ProductService {
 
   async remove(userId: string, productId: string): Promise<Response> {
     try {
+      if (!isValidObjectId(productId)) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message: 'Id is not valid',
+        } as Response);
+      }
       const removeProduct = await this.productModel.deleteOne({
         _id: productId,
         user: userId,
